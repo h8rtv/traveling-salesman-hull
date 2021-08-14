@@ -7,7 +7,22 @@ float dist(const Point2D& p1, const Point2D& p2) {
     );
 }
 
-float tsp(const std::vector<Point2D>& points, std::list<Point2D>& cycle) {
+float calc_dist(std::list<Point2D>& cycle) {
+    float total_dist = 0;
+    for (auto iit = cycle.begin(); iit != cycle.end(); ++iit) {
+        auto jit = std::next(iit);
+        if (jit == cycle.end()) {
+            jit = cycle.begin();
+        }
+        Point2D& i = *iit,
+                 j = *jit;
+        total_dist += dist(i, j);
+    }
+
+    return total_dist;
+}
+
+void tsp(const std::vector<Point2D>& points, std::list<Point2D>& cycle) {
     for (const Point2D& point: points) {
         float min_dist = INF;
         std::list<Point2D>::iterator min_jit;
@@ -33,21 +48,8 @@ float tsp(const std::vector<Point2D>& points, std::list<Point2D>& cycle) {
             cycle.insert(min_jit, point);
         }
     }
-
-    float total_dist = 0;
-    for (auto iit = cycle.begin(); iit != cycle.end(); ++iit) {
-        auto jit = std::next(iit);
-        if (jit == cycle.end()) {
-            jit = cycle.begin();
-        }
-        Point2D& i = *iit,
-                 j = *jit;
-        total_dist += dist(i, j);
-    }
     
     cycle.push_back(cycle.front());
-
-    return total_dist;
 }
 
 /* main
@@ -86,11 +88,17 @@ int main(int argc, char* argv[]) {
 
 	write_output("fecho.txt", hull);
 
-    float total_dist = tsp(points, hull);
+    // Realiza o travelling salesman com a técnica de cheapest insertion para inserir os pontos restantes
+    // dentro de points dentro de hull
+    tsp(points, hull);
+
+    // Calcula a distância total do percurso definido dentro de hull (em ordem anti-horária)
+    float total_dist = calc_dist(hull);
 
 	// Tempo do fim do algoritmo
 	auto end = std::chrono::system_clock::now();
 
+    // Escreve o ciclo calculado do travelling salesman
 	write_output("ciclo.txt", hull);
 
 	// Calcula o tempo de execução do algoritmo
