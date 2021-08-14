@@ -1,6 +1,17 @@
 #include "quick_hull.cpp"
 #include <algorithm>
 
+/* dist
+ * p1: Point2D, primeiro ponto a ser calculado a distância.
+ * p2: Point2D, primeiro ponto a ser calculado a distância.
+ * Função que realiza o cálculo de distância entre dois pontos (p1 e p2).
+ * Retorna a distância euclidiana entre os pontos p1 e p2.
+ * 
+ * - Análise de complexidade:
+ * 
+ * - Corretude:
+ * 
+ */
 float dist(const Point2D& p1, const Point2D& p2) {
     return sqrt(
         (p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y)
