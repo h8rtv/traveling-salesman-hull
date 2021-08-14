@@ -43,6 +43,11 @@ public:
         x = point.x;
         y = point.y;
 	}
+
+	// Operador de comparação de dois pontos
+	bool operator==(const Point2D& point) {
+		return x == point.x && y == point.y;
+	}
 };
 
 
@@ -755,7 +760,7 @@ std::list<Point2D> quick_hull(const std::vector<Point2D>& points) {
  * comportamento da função quick_hull, que pode ser O(N * lgN) ou O(N^2).
  * 
  */
-int main(int argc, char* argv[]) {
+int main2(int argc, char* argv[]) {
 	// Tratamento de erro caso o input seja fora dos padrões definidos
 	if (argc < 2) {
 		std::cout << "Usage: ./hull <filename>" << std::endl;

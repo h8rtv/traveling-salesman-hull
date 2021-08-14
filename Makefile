@@ -1,18 +1,18 @@
 GCC = g++
 
 all:
-	$(GCC) src/quick_hull.cpp -o hull
+	$(GCC) src/tsp.cpp -o tsp
 
 clean:
-	rm -rf hull *.txt *.pdf
+	rm -rf tsp *.txt *.pdf
 
 genpoints:
-	scripts/genpoints 1000
+	scripts/genpoints 30
 
 view:
 	scripts/visualizar.sh
 
 run:
-	./hull input.txt
+	./tsp input.txt
 
 default: all
