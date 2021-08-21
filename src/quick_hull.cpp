@@ -43,11 +43,6 @@ public:
         x = point.x;
         y = point.y;
 	}
-
-	// Operador de comparação de dois pontos
-	bool operator==(const Point2D& point) {
-		return x == point.x && y == point.y;
-	}
 };
 
 
