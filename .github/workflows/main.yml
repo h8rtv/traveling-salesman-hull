@@ -16,7 +16,7 @@ jobs:
       run:  |
             cd scripts
             make
-            sudo apt-get install gnuplot
+            sudo apt-get update && sudo apt-get install gnuplot
     - name: Generate points
       run: make genpoints
     - name: Compile TSP
