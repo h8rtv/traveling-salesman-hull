@@ -16,12 +16,18 @@ jobs:
       run:  |
             cd scripts
             make
+            sudo apt-get install gnuplot
     - name: Generate points
       run: make genpoints
     - name: Compile TSP
       run: make
     - name: Run
       run: make run
+    - name: Create PDF files
+      run: |
+          npts=$(head -1 input.txt); tail -$npts input.txt > input2.txt; gnuplot pontos.plot
+          cp fecho.txt fecho2.txt; head -1 fecho.txt >> fecho2.txt; gnuplot fecho.plot
+          gnuplot ciclo.plot
     - name: Upload artifacts
       uses: actions/upload-artifact@v2
       with:
