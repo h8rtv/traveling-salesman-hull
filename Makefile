@@ -7,7 +7,7 @@ clean:
 	rm -rf tsp *.txt *.pdf
 
 genpoints:
-	scripts/genpoints 3
+	scripts/genpoints 50
 
 view:
 	scripts/visualizar.sh

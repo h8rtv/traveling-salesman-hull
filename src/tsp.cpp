@@ -5,6 +5,7 @@
 
 #include "quick_hull.cpp"
 #include <algorithm>
+#include <queue>
 
 /* Escolha das estruturas de dados:
  * Para representação do ciclo, mantém-se a lista encadeada retornada do algoritmo de quick_hull, pois
@@ -273,46 +274,51 @@ float calc_dist(std::list<Point2D>& cycle) {
  * Portanto, prova-se que o algoritmo irá retornar um ciclo hamiltoniano como resultado que usa uma aproximação de minimizar a inserção pelo
  * custo da aresta.
  */
-void tsp(const std::list<Point2D>& points, std::list<Point2D>& cycle) {
-    // Para cada ponto não adicionado dentro do ciclo...
-    for (const Point2D& point: points) {
-
+void tsp(std::list<Point2D>& points, std::list<Point2D>& cycle) {
+    while (points.size() > 0) {
+        // printf("%d\n", points.size());
         // Variáveis para guardar o ponto com menor distância dentro do ciclo
         float min_dist = INF;
         std::list<Point2D>::iterator min_jit;
-        
-        // Loop para calcular o ponto com distância entre point e um ponto de cycle
-        for (auto iit = cycle.begin(); iit != cycle.end(); ++iit) {
-            auto jit = std::next(iit); // Pega o sucessor do ponto i dentro do ciclo
-            
-            if (jit == cycle.end()) { // Se o ponto j não existir...
-                jit = cycle.begin(); // O ponto j será o começo do ciclo, para fechar o ciclo
-            }
-            
-            // Aqui o ponto j será o sucessor de i
-            
-            // Retorna os pontos i e j apontados por seus iteradores
-            Point2D& i = *iit,
-                     j = *jit;
-            
-            // Calcula distância entre i-k, j-k e i-j
-            // k é o ponto do loop externo, point
-            float dik = dist(i, point);
-            float djk = dist(j, point);
-            float dij = dist(i, j);
-            float new_min_dist = dik + djk - dij;
+        std::list<Point2D>::iterator min_point;
 
-            // Se a distância for menor do que alguma já calculada...
-            if (new_min_dist < min_dist) {
-                // Substitui com informações para realizar a inserção dentro do ciclo
-                min_dist = new_min_dist;
-                min_jit = jit;
+        // Para cada ponto não adicionado dentro do ciclo...
+        for (std::list<Point2D>::iterator point = points.begin(); point != points.end(); ++point) {
+            // Loop para calcular o ponto com distância entre point e um ponto de cycle
+            for (auto iit = cycle.begin(); iit != cycle.end(); ++iit) {
+                auto jit = std::next(iit); // Pega o sucessor do ponto i dentro do ciclo
+                
+                if (jit == cycle.end()) { // Se o ponto j não existir...
+                    jit = cycle.begin(); // O ponto j será o começo do ciclo, para fechar o ciclo
+                }
+                
+                // Aqui o ponto j será o sucessor de i
+                
+                // Retorna os pontos i e j apontados por seus iteradores
+                Point2D& i = *iit,
+                        j = *jit;
+                
+                // Calcula distância entre i-k, j-k e i-j
+                // k é o ponto do loop externo, point
+                float dik = dist(i, *point);
+                float djk = dist(j, *point);
+                float dij = dist(i, j);
+                float new_min_dist = dik + djk - dij;
+
+                // Se a distância for menor do que alguma já calculada...
+                if (new_min_dist < min_dist) {
+                    // Substitui com informações para realizar a inserção dentro do ciclo
+                    min_dist = new_min_dist;
+                    min_jit = jit;
+                    min_point = point;
+                }
             }
         }
         
         // Insere point antes do ponto J, e após o ponto I encontrado
         if (min_jit != cycle.end()) {
-            cycle.insert(min_jit, point);
+            cycle.insert(min_jit, *min_point);
+            points.erase(min_point);
         }
     }
 }
