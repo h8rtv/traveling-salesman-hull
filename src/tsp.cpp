@@ -24,7 +24,7 @@
  * 
  * - Análise de complexidade:
  * A complexidade da função é dada pelos laços de repetição dentro dela, o primeiro laço de repetição
- * será executado Ci vezes, onde Ci é o número de pontos dentro do ciclo.
+ * será executado Ci vezes, onde Ci é o número de pontos dentro do ciclo inicial, ou seja, do fecho convexo.
  * O segundo laço de repetição, que está dentro do primeiro, será executado N vezes, porém como o mesmo
  * está dentro do primeiro laço, ele será executado no máximo N*C vezes. Em média, assumindo que o ponto
  * a ser buscado está no meio da lista, o custo médio será Ci * (N/2), pois o loop interno para a iteração
@@ -32,18 +32,19 @@
  * Logo, a complexidade de remove_cycle_from_points é limitada por O(N*Ci).
  * 
  * Melhor caso:
- * Quando Ci e constante, o custo de O(N*Ci) será linear da ordem de O(N).
+ * Quando Ci e constante, o custo de O(N*Ci) será linear da ordem de O(N). Ci tende a ser bem pequeno nos testes realizados
+ * com uma distribuição em espaço fixo e uma distribuição retangular. Com um N suficientemente grande, Ci tende a 4, pois o 
+ * fecho convexo da distribuição retangular será o retângulo que forma a bounding box de todos os pontos.
  * 
  * Pior caso:
- * Para N grande e uma distribuição uniforme, Ci é em geral bem pequeno, mas no pior caso, quando o fecho convexo é
- * muito próximo de um ciclo hamiltoniano, pode ser da ordem de N. Neste caso, o custo do algoritmo será da ordem de O(N^2).
+ * Quando o fecho convexo é muito próximo de um ciclo hamiltoniano, Ci será da ordem de N. Neste caso, o custo do algoritmo
+ * será da ordem de O(N^2). Distribuições circulares irão apresentar fecho convexo com mais pontos também, e espaços de pontos
+ * maiores poderão implicar numa relação de Ci e N. Como isso não é o utilizado nos testes do algoritmo, esse caso é raro.
  *
  * Caso médio:
- * Assumindo uma distribuição normal de pontos, percebe-se um N que domina o tamanho do fecho convexo encontrado.
- * Com base nisso, pode-se dizer que o crescimento de N supera o crescimento de Ci. Portanto, se assumirmos que
- * Ci é um fator de de N na forma de Ci = N * f, 0 < f < 1, a fórmula resultante será:
- * (N*N*f), que também é da ordem de O(N^2).
- * Por causa disso, a execução média também é O(N^2).
+ * Assumindo a distribuição de pontos fornecida, percebe-se que Ci tende a um fecho convexo constante, formado pela bounding box
+ * do espaço fechado em que os pontos são gerados. Por causa disso, percebe-se que Ci tem um comportamento constante nesses casos
+ * de utilização. Por causa disso, a execução média nessa situação também linear e portanto O(N).
  *
  * - Corretude:
  * 
@@ -200,28 +201,34 @@ float calc_dist(std::list<Point2D>& cycle) {
  * aumenta com cada iteração do loop, pois um novo ponto é adicionado a cada iteração. Portanto,
  * Ci sendo tamanho do fecho convexo inicial, o loop interno executa Ci + (Ci + 1) + (Ci + 2) +
  * + (Ci + 3) + ... + (N - 2) + (N - 1) + N, o que implica em:
- * N(N + 1) / 2 - Ci(Ci + 1) / 2 = (N^2)/2 + N/2 - (Ci^2)/2 - Ci/2
+ * N(N + 1) / 2 - Ci(Ci + 1) / 2 = (N^2)/2 + N/2 - (Ci^2)/2 - Ci/2 execuções.
  * Dentro do loop interno, são executadas operações constantes. 
  * Ao fim do loop interno, é feita uma inserção em lista encadeada, com custo constante também.
  *
  * Melhor caso:
- * Ocorre quando N = Ci + 1, com Ci sendo o tamanho do fecho convexo.
- * Neste caso, o tamanho da lista de pontos é 1 e portanto o loop externo executa somente uma vez.
- * O loop interno executará na ordem de N e portanto o algoritmo se dará em O(N).
+ * Ocorre quando N = Ci + 1 ou da ordem linear, com Ci sendo o tamanho do fecho convexo.
+ * Neste caso, o tamanho da lista de pontos é 1 ou uma constante e portanto o loop externo
+ * executa um número de vezes constante. O loop interno executará na ordem de N e portanto
+ * o algoritmo se dará em O(N).
+ * (N^2)/2 + N/2 - ((N - X)^2)/2 - (N - X)/2 execuções, X sendo uma constante e 0 < X < N.
+ * = (N^2)/2 + N/2 - (N^2)/2 + (2NX)/2 - (X^2)/2 - N/2 + X/2. 
+ * = (N^2)/2 - (N^2)/2 + N/2 - N/2 + NX - (X^2)/2 + X/2. 
+ * = NX - (X^2)/2 + X/2 = O(N).
  * É importante notar que o verdadeiro melhor caso, quando N = Ci, não executa a função tsp, pois este
  * pode ser facilmente identificado previamente com um analise do tamanho do vetor de pontos com a lista
  * do fecho convexo. Caso sejam iguais o fecho convexo é um ciclo hamiltoniano.
  * 
  * Pior caso:
- * Ocorre quando Ci <= 3. Neste caso, o loop externo executará na ordem O(N) e o loop interno também, resultando
- * num algoritmo da ordem de O(N^2).
+ * Ocorre quando Ci <= 3 ou de ordem constante. Neste caso, o loop externo executará na ordem O(N)
+ * e o loop interno também, resultando num algoritmo da ordem de O(N^2).
+ * (N^2)/2 + N/2 - (Ci^2)/2 - Ci/2 execuções = O(N^2).
+ * Esse é o caso mais comum testado com a distribuição recebida pela geração de pontos aleatórios recebida,
+ * que segue uma distribuição retangular e num espaço fechado de aproximadamente 1000 x 1000.
  *
  * Caso médio:
- * Assumindo uma distribuição normal de pontos, percebe-se um N que domina o tamanho do fecho convexo encontrado.
- * Com base nisso, pode-se dizer que o crescimento de N supera o crescimento de Ci. Portanto, se assumirmos que
- * Ci é um fator de de N na forma de Ci = N * f, 0 < f < 1, a fórmula resultante será:
- * (N^2)/2 + N/2 - ((N*f)^2)/2 - (N*f)/2, que também é da ordem de O(N^2).
- * Por causa disso, a execução média também é O(N^2).
+ * Em média, o Ci é assumido como um valor constante, pelos mesmos motivos da função remove_cycle_from_points, que 
+ * são a distribuição utilizada e visualizada nos testes do algoritmo aproxima para um N grande o valor de Ci para 4.
+ * Por causa disso, a execução média também é a do pior caso, sendo quadrática e portanto O(N^2).
  *
  * - Corretude:
  * Definição:
@@ -331,8 +338,8 @@ void tsp(const std::list<Point2D>& points, std::list<Point2D>& cycle) {
  *    Remove pontos da lista de pontos que já estão no ciclo, e portanto são do fecho convexo, o que têm
  *    custo da ordem de O(N * Ci), com Ci sendo o tamanho do fecho convexo calculado no quick_hull. No melhor caso, quando
  *    Ci é constante, essa operação é linear, no pior, quando Ci é da ordem de N, executa em O(N^2).
- *    Executa a função tsp, que no pior caso e no caso médio é O(N^2). No melhor caso ele será O(N), quando o tamanho do
- *    fecho + 1 é igual ao número de pontos analisados N, e no pior caso é de O(N^2) assim como no caso médio.
+ *    Executa a função tsp. No melhor caso ele será O(N), quando o tamanho do Ci da ordem de número de pontos analisados N,
+ *    e no pior caso, quando Ci é constante, é de O(N^2) assim como no caso médio.
  *    Portanto, sempre dentro dessa condição terá um custo da ordem de O(N^2).
  * É inserido no fim da lista o começo dela para fechar um ciclo corretamente.
  * Calcula a distância percorrida no ciclo, em tempo linear O(N).
@@ -346,8 +353,10 @@ void tsp(const std::list<Point2D>& points, std::list<Point2D>& cycle) {
  * 1. Ocorre quando o algoritmo de quick_hull executa em O(N^2), não importando os outros casos. Esse caso é limitado por
  * O(N^2).
  * 2. Ocorre quando a remoção dos pontos que estão dentro do fecho convexo executa em O(N^2), limitando a execução a O(N^2).
- * 3. Ocorre quando o cáculo do tsp executa em O(N^2), limitando também a execução em O(N^2).
- * É importante notar que não é possível ocorrer o melhor caso da remoção dos pontos ao mesmo tempo que o melhor caso da função
+ *    Este caso ocorre quando Ci é da ordem de N.
+ * 3. Ocorre quando o cáculo do tsp executa em O(N^2), limitando também a execução em O(N^2). Este caso ocorre quando Ci é de
+ *    ordem constante. É o caso mais comum de execução do algoritmo.
+ * Ressaltando novamente, não é possível ocorrer o melhor caso da remoção dos pontos ao mesmo tempo que o melhor caso da função
  * tsp, pois são opostos. (Se o tamanho do fecho convexo for mais próximo do tamanho da lista de pontos analisados,
  * maior o custo da remoção de pontos, e se o tamanho do fecho convexo for o menor possível, maior do tsp)
  *
