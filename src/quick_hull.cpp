@@ -22,7 +22,7 @@
 class Point2D {
 public:
 	// Coordenada x do ponto.
-    int x;
+    int x; bool added = false;
 	// Coordenada y do ponto.
     int y;
 

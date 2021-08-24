@@ -5,6 +5,19 @@
 
 #include "quick_hull.cpp"
 #include <algorithm>
+#include <queue>
+
+struct PItem {
+    float dist;
+    std::list<Point2D>::iterator point;
+    std::list<Point2D>::iterator pos;
+
+    PItem(float dist, std::list<Point2D>::iterator point, std::list<Point2D>::iterator pos) {
+        this->dist = dist;
+        this->point = point;
+        this->pos = pos;
+    }
+};
 
 /* Escolha das estruturas de dados:
  * Para representação do ciclo, mantém-se a lista encadeada retornada do algoritmo de quick_hull, pois
@@ -308,35 +321,66 @@ float calc_dist(std::list<Point2D>& cycle) {
  * de minimizar o custo de cada inserção.
  */
 void tsp(std::list<Point2D>& points, std::list<Point2D>& cycle) {
-    // Variáveis para guardar o ponto com menor distância dentro do ciclo
-    float min_dist = INF;
-    float cost = 0;
-    std::list<Point2D>::iterator min_jit;
-    std::list<Point2D>::iterator min_point;
+    auto foo = [](PItem a, PItem b) { return a.dist > b.dist; };
+        std::priority_queue<
+            PItem,
+            std::vector<PItem>,
+            decltype(foo) 
+    > pq(foo);
 
-    // Enquanto ainda houver pontos a serem analisados...
-    while (points.size() > 0) {
-        min_dist = INF;
-        // Para cada ponto que ainda não está dentro do ciclo...
+    for (auto iit = cycle.begin(); iit != cycle.end(); ++iit) {
+        auto jit = std::next(iit); // Pega o sucessor do ponto i dentro do ciclo
+        
+        if (jit == cycle.end()) { // Se o ponto j não existir...
+            jit = cycle.begin(); // O ponto j será o começo do ciclo, para fechar o ciclo
+        }
+        std::list<Point2D>::iterator min_jit;
+        std::list<Point2D>::iterator min_point;
+        float min_dist = INF;
         for (std::list<Point2D>::iterator point = points.begin(); point != points.end(); ++point) {
+            Point2D& i = *iit,
+                    j = *jit;
+            
+            float dik = dist(i, *point);
+            float djk = dist(j, *point);
+            float dij = dist(i, j);
+            float new_min_dist = dik + djk - dij;
 
-            // Loop para calcular a tripla de pontos que minimiza a operação dik + djk - dij
-            for (auto iit = cycle.begin(); iit != cycle.end(); ++iit) {
-                auto jit = std::next(iit); // Pega o sucessor do ponto i dentro do ciclo
-                
-                if (jit == cycle.end()) { // Se o ponto j não existir...
-                    jit = cycle.begin(); // O ponto j será o começo do ciclo, para fechar o ciclo
-                }
-                
-                // Aqui o vértice j será o sucessor de i
-                // O vértice k será o vértice a ser analisado
-                
-                // Retorna os vértices i e j apontados por seus iteradores
+            // Se a distância for menor do que alguma já calculada...
+            if (new_min_dist < min_dist) {
+                // Substitui com as novas informações para realizar a inserção dentro do ciclo
+                min_dist = new_min_dist; // menor distância
+                min_jit = jit; // vértice j
+                min_point = point; // vértice k
+            }
+        }
+        pq.push(PItem(min_dist, min_point, min_jit));
+    }
+
+    while (!pq.empty()) {
+        printf("%ld\n", pq.size());
+        PItem item = pq.top();
+        pq.pop();
+        if (item.point->added) {
+            continue;
+        };
+
+        std::list<Point2D>::iterator pos = cycle.insert(item.pos, *item.point);
+        item.point->added = true;
+        for (auto iit = cycle.begin(); iit != cycle.end(); ++iit) {
+            auto jit = std::next(iit); // Pega o sucessor do ponto i dentro do ciclo
+            
+            if (jit == cycle.end()) { // Se o ponto j não existir...
+                jit = cycle.begin(); // O ponto j será o começo do ciclo, para fechar o ciclo
+            }
+            std::list<Point2D>::iterator min_jit;
+            std::list<Point2D>::iterator min_point;
+            float min_dist = INF;
+            for (std::list<Point2D>::iterator point = points.begin(); point != points.end(); ++point) {
+                if (point->added) continue;
                 Point2D& i = *iit,
                          j = *jit;
                 
-                // Calcula distância entre i-k, j-k e i-j
-                // k é o vértice do loop externo, point
                 float dik = dist(i, *point);
                 float djk = dist(j, *point);
                 float dij = dist(i, j);
@@ -350,12 +394,9 @@ void tsp(std::list<Point2D>& points, std::list<Point2D>& cycle) {
                     min_point = point; // vértice k
                 }
             }
-        }
-        
-        // Insere point (vértice k) antes do vértice j, e após o vértice i encontrado
-        if (min_jit != cycle.end()) {
-            cycle.insert(min_jit, *min_point);
-            points.erase(min_point);
+            if (min_dist != INF) {
+                pq.push(PItem(min_dist, min_point, min_jit));
+            }
         }
     }
 }
