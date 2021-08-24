@@ -661,13 +661,13 @@ void quick_hull_rec(const std::vector<Point2D>& points, std::list<Point2D>& hull
 
 	// Realiza as chamadas recursivas, passando o conjunto de pontos de entrada e saída,
 	// bem como a linha que fará a divisão entre pontos da esquerda e direita.
-	quick_hull_rec(firstPoints, hull, firstLine);
+	quick_hull_rec(secondPoints, hull, secondLine);
 
 	// Adiciona o ponto mais longe encontrado, uma vez que ele é necessário para
 	// completar os pontos dentro do fecho convexo em ordem anti-horária.
 	hull.push_back(farthest);
 
-	quick_hull_rec(secondPoints, hull, secondLine);
+	quick_hull_rec(firstPoints, hull, firstLine);
 }
 
 /* quick_hull
@@ -723,13 +723,13 @@ std::list<Point2D> quick_hull(const std::vector<Point2D>& points) {
 
 	// Realiza as chamadas recursivas, passando o conjunto de pontos de entrada e saída,
 	// bem como a linha que fará a divisão entre pontos da esquerda e direita.
-	quick_hull_rec(left, hull, line);
+	quick_hull_rec(right, hull, reverse_line(line));
 	
 	// Adiciona o segundo ponto extremo encontrado, uma vez que ele é necessário para
 	// completar os pontos dentro do fecho convexo em ordem anti-horária.
 	hull.push_back(line.second);
 	
-	quick_hull_rec(right, hull, reverse_line(line));
+	quick_hull_rec(left, hull, line);
 
 	return hull;
 }
