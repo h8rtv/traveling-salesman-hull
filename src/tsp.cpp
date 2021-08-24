@@ -116,7 +116,7 @@ void remove_cycle_from_points(const std::list<Point2D>& cycle, std::list<Point2D
  * dist_euclidiana = sqrt(a^2 + b^2)
  * 
  */
-float dist(const Point2D& p1, const Point2D& p2) {
+double dist(const Point2D& p1, const Point2D& p2) {
     return sqrt(
         (p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y)
     );
@@ -165,9 +165,9 @@ float dist(const Point2D& p1, const Point2D& p2) {
  * 
  * Portanto, a variável retornada ao final do algoritmo será a soma de todas as distâncias do ciclo.
  */
-float calc_dist(std::list<Point2D>& cycle) {
+double calc_dist(std::list<Point2D>& cycle) {
     // Soma da distância a ser retornada ao final da função
-    float total_dist = 0;
+    double total_dist = 0;
     
     // Para cada ponto i dentro do ciclo...
     for (auto iit = cycle.begin(); iit != cycle.end(); ++iit) {
@@ -434,7 +434,7 @@ int main(int argc, char* argv[]) {
     hull.push_back(hull.front());
 
     // Calcula a distância total do percurso definido dentro de hull (em ordem anti-horária)
-    float total_dist = calc_dist(hull);
+    double total_dist = calc_dist(hull);
 
 	// Tempo do fim do algoritmo
 	auto end = std::chrono::system_clock::now();
