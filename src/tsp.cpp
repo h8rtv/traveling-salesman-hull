@@ -208,31 +208,31 @@ float calc_dist(std::list<Point2D>& cycle) {
  * cada iteração do loop acima e com C sendo o tamanho do ciclo atual.
  * Dentro desse loop, um terceiro loop aninhado estará presente e executará C vezes em cada iteração do loop externo,
  * com C sendo novamente o tamanho do ciclo atual.
- * Analisando os loops juntamente, percebe-se que o loop mais interno executa Ci vezes na primeira iteração, Ci + 1 vezes na segunda
- * iteração e assim por diante até que C = N, portanto o número de execuções do loop mais interno será dado por: 
- * (N - Ci) * (Ci + (Ci + 1) + (Ci + 2) + (Ci + 3) + ... + (N - 1) + N)
- * = (N - Ci) * (N(N+1)/2 - Ci(Ci+1)/2)
- * = N^2 * (N+1)/2 - N * Ci(Ci+1)/2 - Ci * (N(N+1)/2) + Ci^2 * (Ci+1)/2
- * = (N^3)/2 + N/2 - (NCi^2)/2 - NCi - (CiN^2)/2 + (Ci^3)/2 + Ci/2. 
+ * Percebe-se que C varia de Ci até N e portanto, o custo do loop mais interno se dará pela expressão:
+ * sum com C = Ci até N de ((N - C) * C)
+ * = sum com C = Ci até N de (NC - C^2)
+ * = sum com C = Ci até N de (NC) - sum com C = Ci até N de (C^2) 
+ * Analisando o fator que cresce com o aumento da entrada:
+ * sum com C = Ci até N de (NC)
+ * = N * (sum com C = Ci até N de (C))
+ * = N * (sum com C = 1 até N de (C) - sum com C = 1 até Ci de (C))
+ * = N * (N * (N+1) / 2 - Ci * (Ci + 1) / 2)
+ * = N * ((N^2)/2 + N/2 - (Ci^2)/2 - Ci/2)
+ * = (N^3)/2 + ^2/2 - N * (Ci^2)/2 + N * Ci/2)
+ * Analisando o fator que diminui com o aumento da entrada:
+ *  - sum com C = Ci até N de (C^2) 
+ * = - (sum com C = 1 até N de (C^2) - sum com C = 1 até Ci de (C^2))
+ * = - (((N * (N+1) * (2N+1))/6 - (Ci * (Ci+1) * (2Ci+1))/6))
+ * = - (((N^2 + N) * (2N + 1))/6 - ((Ci^2 + Ci) * (2Ci + 1))/6))
+ * = - ((2N^3)/6 + (2N^2)/6 + (N^2)/6 + N^6 - ((2Ci^3)/6 + (2Ci^2)/6 + (Ci^2)/6 + Ci/6))
+ * = - ((2N^3)/6 + (N^2)/2 + N^6 - (2Ci^3)/6 - (Ci^2)/2 - Ci/6)
+ * = - (N^3)/3 - (N^2)/2 - N^6 + (Ci^3)/3 + (Ci^2)/2 + Ci/6
+ * Percebe-se que no fator que cresce, o termo que domina é o (N^3) / 2 e no fator que reduz o - (N^3)/3.
+ * Como resultado final o custo do loop mais interno é limitado por (N^3)/6 e portanto ele executa em ordem de O(N^3).
  * Dentro do loop mais interno, são executadas operações constantes. 
  * Ao fim dos dois loops internos, é feita uma inserção e uma remoção em lista encadeada, com custo constante também.
- *
- * Casos possíveis:
+ * Portanto algortimo é limitado pelo custo do loop mais interno e é da ordem de O(N^3).
  * 
- * O tamanho do fecho convexo é da ordem de N:
- * Ci será tratado como um fator de N, portanto Ci = N * f, 0 < f < 1.
- * = (N^3)/2 + N/2 - (NCi^2)/2 - NCi - (CiN^2)/2 + (Ci^3)/2 + Ci/2. 
- * = O(N^3 + Ci^3)
- * = O(N^3 + (N*f)^3)
- * = O(N^3)
- * 
- * O tamanho do fecho convexo é de ordem constante:
- * Ci será tratado como uma constante, logo 
- * = (N^3)/2 + N/2 - (NCi^2)/2 - NCi - (CiN^2)/2 + (Ci^3)/2 + Ci/2
- * = O(N^3).
- * Esse é o caso mais comum testado com a distribuição recebida pela geração de pontos aleatórios dada,
- * que segue uma distribuição retangular e num espaço fechado de aproximadamente 1000 x 1000.
- *
  * - Corretude:
  * Definição:
  *  Um ciclo hamiltoniano é um ciclo que passa por todos os vértices de um grafo somente uma vez.
@@ -310,7 +310,6 @@ float calc_dist(std::list<Point2D>& cycle) {
 void tsp(std::list<Point2D>& points, std::list<Point2D>& cycle) {
     // Variáveis para guardar o ponto com menor distância dentro do ciclo
     float min_dist = INF;
-    float cost = 0;
     std::list<Point2D>::iterator min_jit;
     std::list<Point2D>::iterator min_point;
 
