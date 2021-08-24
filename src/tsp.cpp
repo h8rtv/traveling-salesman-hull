@@ -5,7 +5,6 @@
 
 #include "quick_hull.cpp"
 #include <algorithm>
-#include <queue>
 
 /* Escolha das estruturas de dados:
  * Para representação do ciclo, mantém-se a lista encadeada retornada do algoritmo de quick_hull, pois
@@ -33,14 +32,14 @@
  * Logo, a complexidade de remove_cycle_from_points é limitada por O(N*Ci).
  * 
  * Melhor caso:
- * Quando Ci e constante, o custo de O(N*Ci) será linear da ordem de O(N). Ci tende a ser bem pequeno nos testes realizados
+ * Quando Ci é constante, o custo de O(N*Ci) será linear da ordem de O(N). Ci tende a ser bem pequeno nos testes realizados
  * com uma distribuição em espaço fixo e uma distribuição retangular. Com um N suficientemente grande, Ci tende a 4, pois o 
  * fecho convexo da distribuição retangular será o retângulo que forma a bounding box de todos os pontos.
  * 
  * Pior caso:
- * Quando o fecho convexo é muito próximo de um ciclo hamiltoniano, Ci será da ordem de N. Neste caso, o custo do algoritmo
- * será da ordem de O(N^2). Distribuições circulares irão apresentar fecho convexo com mais pontos também, e espaços de pontos
- * maiores poderão implicar numa relação de Ci e N. Como isso não é o utilizado nos testes do algoritmo, esse caso é raro.
+ * Caso Ci seja da ordem de N. Isso ocorre quando o fecho convexo é muito próximo de um ciclo hamiltoniano e o seu tamanho cresce
+ * em conjunto com o tamanho da entrada. Neste caso, o custo do algoritmo será da ordem de O(N^2). Esse caso não é observado nos
+ * testes do algoritmo, pois a distribuição retangular de espaço fixo tende a um Ci constante.
  *
  * Caso médio:
  * Assumindo a distribuição de pontos fornecida, percebe-se que Ci tende a um fecho convexo constante, formado pela bounding box
@@ -51,28 +50,34 @@
  * 
  * Prova por loop invariante:
  * 
- * Invariante de loop: O subvetor de points Pa não conterá os pontos que fazem parte do ciclo C.
+ * Invariante de loop: O conjunto S não conterá os pontos de um subvetor de pontos analisados Pa que fazem parte do ciclo C.
  * 
  * Inicialização:
- * |Pa| é zero, e portanto, nenhum ponto foi removido dentro de points.
+ * |Pa| é zero, e portanto, nenhum ponto foi removido dentro de S.
  * 
  * Pa = []
+ * P é o espaço de todos os pontos analisados.
+ * S = P
  * 
  * Manutenção:
  * Ao fim da iteração do laço, foi comparado o ponto do ciclo da iteração atual com os pontos dentro
  * de points e removido o ponto da iteração dentro da lista de points. Portanto, se o ponto i analisado
- * estiver em C, este será removido, mantendo a invariante.
+ * estiver em C, este será removido de S, mantendo a invariante.
  * 
- * Pa = P[1:i]
+ * Pa = [1:i]
+ * S* = S da iteração i - 1
+ * S = S* - i caso i pertença a C
+ * S = S*     caso contrário
  * 
  * Término:
- * Após o final do loop, o subvetor Pa conterá apenas os pontos que não estiverem dentro do ciclo
- * analisado.
+ * Após o final do loop, o subvetor Pa conterá todos os pontos e o conjunto S conterá todos os pontos em P
+ * que não estiverem dentro do ciclo analisado.
  * 
- * Pa = P[1:N]
+ * Pa = [1:i]
+ * S = P - C
  * 
  * Portanto, assumindo que A seja a lista de pontos e B seja a lista de pontos dentro do ciclo,
- * a lista de points conterá A - B.
+ * a lista de points conterá A - B ao fim da execução.
  */
 void remove_cycle_from_points(const std::list<Point2D>& cycle, std::list<Point2D>& points) {
     // Começa iteração pelos pontos dentro do ciclo (convex hull)
@@ -187,49 +192,46 @@ float calc_dist(std::list<Point2D>& cycle) {
 }
 
 /* tsp
- * points: std::list<Point2D>&, lista de pontos que não estão no ciclo ainda. 
+ * points: std::list<Point2D>&, lista de pontos da entrada que não estão no ciclo ainda. 
  * cycle: std::list<Point2D>&, fecho convexo previamente calculado.
  * Função que adiciona os pontos da lista points na lista cycle de forma a construir um
  * ciclo hamiltoniano, utilizado para retornar uma solução aproximada do
- * problema do caixeiro viajante (tsp).
+ * problema do caixeiro viajante (tsp) com a heurística de inserção mais barata.
  * 
  * - Análise de complexidade:
- *
- * O algoritmo inicia iterando por todos os pontos da lista points, com um custo de O(N - Ci), sendo Ci o 
- * tamanho do fecho convexo calculado previamente.
- * Dentro do loop, executa operações constantes e outro loop, que percorre o ciclo do feixo
- * convexo, executanto O(N * C) vezes, com C sendo o tamanho do ciclo atual. O tamanho do ciclo 
- * aumenta com cada iteração do loop, pois um novo ponto é adicionado a cada iteração. Portanto,
- * Ci sendo tamanho do fecho convexo inicial, o loop interno executa Ci + (Ci + 1) + (Ci + 2) +
- * + (Ci + 3) + ... + (N - 2) + (N - 1) + N, o que implica em:
- * N(N + 1) / 2 - Ci(Ci + 1) / 2 = (N^2)/2 + N/2 - (Ci^2)/2 - Ci/2 execuções.
- * Dentro do loop interno, são executadas operações constantes. 
- * Ao fim do loop interno, é feita uma inserção em lista encadeada, com custo constante também.
- *
- * Melhor caso:
- * Ocorre quando N = Ci + 1 ou da ordem linear, com Ci sendo o tamanho do fecho convexo.
- * Neste caso, o tamanho da lista de pontos é 1 ou uma constante e portanto o loop externo
- * executa um número de vezes constante. O loop interno executará na ordem de N e portanto
- * o algoritmo se dará em O(N).
- * (N^2)/2 + N/2 - ((N - X)^2)/2 - (N - X)/2 execuções, X sendo uma constante e 0 < X < N.
- * = (N^2)/2 + N/2 - (N^2)/2 + (2NX)/2 - (X^2)/2 - N/2 + X/2. 
- * = (N^2)/2 - (N^2)/2 + N/2 - N/2 + NX - (X^2)/2 + X/2. 
- * = NX - (X^2)/2 + X/2 = O(N).
- * É importante notar que o verdadeiro melhor caso, quando N = Ci, não executa a função tsp, pois este
- * pode ser facilmente identificado previamente com um analise do tamanho do vetor de pontos com a lista
- * do fecho convexo. Caso sejam iguais o fecho convexo é um ciclo hamiltoniano.
  * 
- * Pior caso:
- * Ocorre quando Ci <= 3 ou de ordem constante. Neste caso, o loop externo executará na ordem O(N)
- * e o loop interno também, resultando num algoritmo da ordem de O(N^2).
- * (N^2)/2 + N/2 - (Ci^2)/2 - Ci/2 execuções = O(N^2).
- * Esse é o caso mais comum testado com a distribuição recebida pela geração de pontos aleatórios recebida,
- * que segue uma distribuição retangular e num espaço fechado de aproximadamente 1000 x 1000.
+ * Inicialmente, variáveis são definidas, que têm um custo O(1).
+ * Após isso, o algoritmo executa um loop determinado pela condição de haver ainda elementos na lista points. Como em cada
+ * iteração é removido um ponto dessa lista, esse loop executará da ordem de O(N - Ci), com Ci sendo o tamanho do fecho
+ * convexo. 
+ * Após isso, é iterado por todos os pontos da lista points novamente. Porém, nesse caso, serão executadas N - C vezes para
+ * cada iteração do loop acima e com C sendo o tamanho do ciclo atual.
+ * Dentro desse loop, um terceiro loop aninhado estará presente e executará C vezes em cada iteração do loop externo,
+ * com C sendo novamente o tamanho do ciclo atual.
+ * Analisando os loops juntamente, percebe-se que o loop mais interno executa Ci vezes na primeira iteração, Ci + 1 vezes na segunda
+ * iteração e assim por diante até que C = N, portanto o número de execuções do loop mais interno será dado por: 
+ * (N - Ci) * (Ci + (Ci + 1) + (Ci + 2) + (Ci + 3) + ... + (N - 1) + N)
+ * = (N - Ci) * (N(N+1)/2 - Ci(Ci+1)/2)
+ * = N^2 * (N+1)/2 - N * Ci(Ci+1)/2 - Ci * (N(N+1)/2) + Ci^2 * (Ci+1)/2
+ * = (N^3)/2 + N/2 - (NCi^2)/2 - NCi - (CiN^2)/2 + (Ci^3)/2 + Ci/2. 
+ * Dentro do loop mais interno, são executadas operações constantes. 
+ * Ao fim dos dois loops internos, é feita uma inserção e uma remoção em lista encadeada, com custo constante também.
  *
- * Caso médio:
- * Em média, o Ci é assumido como um valor constante, pelos mesmos motivos da função remove_cycle_from_points, que 
- * são a distribuição utilizada e visualizada nos testes do algoritmo aproxima para um N grande o valor de Ci para 4.
- * Por causa disso, a execução média também é a do pior caso, sendo quadrática e portanto O(N^2).
+ * Casos possíveis:
+ * 
+ * O tamanho do fecho convexo é da ordem de N:
+ * Ci será tratado como um fator de N, portanto Ci = N * f, 0 < f < 1.
+ * = (N^3)/2 + N/2 - (NCi^2)/2 - NCi - (CiN^2)/2 + (Ci^3)/2 + Ci/2. 
+ * = O(N^3 + Ci^3)
+ * = O(N^3 + (N*f)^3)
+ * = O(N^3)
+ * 
+ * O tamanho do fecho convexo é de ordem constante:
+ * Ci será tratado como uma constante, logo 
+ * = (N^3)/2 + N/2 - (NCi^2)/2 - NCi - (CiN^2)/2 + (Ci^3)/2 + Ci/2
+ * = O(N^3).
+ * Esse é o caso mais comum testado com a distribuição recebida pela geração de pontos aleatórios dada,
+ * que segue uma distribuição retangular e num espaço fechado de aproximadamente 1000 x 1000.
  *
  * - Corretude:
  * Definição:
@@ -237,8 +239,8 @@ float calc_dist(std::list<Point2D>& cycle) {
  *  Todo grafo completo com 2 ou mais elementos possui um ciclo hamiltoniano. Portanto, como o conjunto de pontos
  *  analisados pode ser visto como um grafo completo, sempre pode-se encontrar um ciclo hamiltoniano.
  * 
- * Invariante de loop:
- *  Dado um grafo completo G(E, V),
+ * Invariante de loop 1 (loop mais externo):
+ *  Dado um grafo completo G(E, V) e um ciclo C:
  *  C sempre será um ciclo hamiltoniano do conjunto de vértices analisados Va que está contido em V.
  * 
  * Inicialização:
@@ -247,44 +249,78 @@ float calc_dist(std::list<Point2D>& cycle) {
  *  
  *  C = a, b, c, ... n, onde C é o caminho que representa o fecho convexo.
  *  Va contém todos os pontos de C
+ *  Vr contém os pontos de V - C, que serão atribuídos a C
  * 
  * Manutenção:
- *  Dado uma aresta A(i, j) dentro do ciclo que pertence a E e um vértice k que pertence a V e está fora do ciclo C,
- *  para cada k, escolhe-se sempre o que minimiza a operação: dik + djk - dij, sendo
- *  dik a distância do vértice i até o vértice k, ou o peso da aresta IK
- *  djk a distância do vértice j até o vértice k, ou o peso da aresta JK
- *  dij a distância do vértice i até o vértice i, ou o peso da aresta E
- *  Uma vez que é encontrado uma tripla (i, j, k) que minimiza a operação:
- *   1. A aresta A é removida do ciclo C
- *   2. A aresta IK é inserida no ciclo C
- *   3. A aresta KJ é inserida no ciclo C
+ *  Dado uma aresta A(i, j) dentro do ciclo que pertence a E, escolhe-se um k.
+ *  A partir disso, é removido A do ciclo e adicionado duas novas arestas, IK e KJ.
  *  
- * Ao substituir A por IK e KJ, mantém-se o ciclo hamiltoniano em Va, pois os vértices previamente inseridos I e J se mantém no ciclo
- * e K é adicionado somente uma vez.
+ *  Ao substituir A por IK e KJ, mantém-se o ciclo hamiltoniano em Va, pois os vértices previamente inseridos i e j se mantém no ciclo
+ *  e k é adicionado somente uma vez.
  * 
  *  C = a, b, c, ... i, k, j, ... n, onde k é o ponto inserido nessa iteração.
  *  Va contém todos os pontos de C
+ *  Vr contém os pontos V - C
  * 
  * Término:
- * Após o fim do loop, todos os vértices em V foram analisados e inseridos em C.
+ *  Após o fim do loop externo, todos os vértices em V foram analisados e inseridos em C, logo Vr está vazio.
  * 
  *  C = a, b, c, ... n, onde C contém todos os pontos de V.
  *  Va contém todos os pontos de V
+ *  |Vr| = 0
  * 
- * Portanto, prova-se que o algoritmo irá retornar um ciclo hamiltoniano como resultado que usa uma aproximação de minimizar a inserção pelo
- * custo da aresta.
+ * Logo, essa invariante prova que o resultado retornado pela função será um ciclo hamiltoniano.
+ * 
+ * Invariante de loop 2 (primeiro loop interno):
+ *  Dado um grafo completo G(E, V) e um ciclo C:
+ *  O vértice P conterá sempre o vértice que minimiza a inserção de P em C para um subvetor Va de pontos analisados.
+ *  
+ * Inicialização:
+ *  |Pa| é zero, e portanto não há vértice a ser analisado.
+ *  
+ *  Pa = []
+ *  P = não existe
+ * 
+ * Manutenção:
+ *  Dado que:
+ *  diP é a distância do vértice i até o vértice P, ou o peso da aresta IP.
+ *  djP é a distância do vértice j até o vértice P, ou o peso da aresta PJ.
+ *  dij é a distância do vértice i até o vértice i, ou o peso da aresta IJ.
+ *  Ao fim de uma iteração do laço, é visto que P mantém o vértice que minimiza a expressão D = diP + djP - dij, para
+ *  o vetor de pontos analisados Pa.
+ *  
+ *  Seja X0 o custo de C atual e X o custo de C com a inserção de P, logo
+ *  X = X0 + D, pois a aresta IJ é removida e as arestas IP e PJ são adicionadas em seu lugar.
+ *  Logo, escolher o ponto que minimiza D implica em escolher o ponto que minimiza a inserção de P em C.
+ * 
+ *  Pa = [1:i]
+ *  P = vértice que minimiza a inserção em C para o Pa analisado.
+ * 
+ * Término:
+ *  Após o término do loop, P conterá o vértice que minimiza D.
+ * 
+ *  Pa = P[1:N]
+ *  P = vértice que terá o minimiza a inserção em C.
+ *  
+ * Logo, essa invariante prova que o primeiro loop interno sempre seleciona um P que minimiza a inserção em C.
+ * 
+ * Portanto, prova-se que o algoritmo irá retornar um ciclo hamiltoniano como resultado e que esse ciclo usará uma heurística
+ * de minimizar o custo de cada inserção.
  */
 void tsp(std::list<Point2D>& points, std::list<Point2D>& cycle) {
-    while (points.size() > 0) {
-        // printf("%d\n", points.size());
-        // Variáveis para guardar o ponto com menor distância dentro do ciclo
-        float min_dist = INF;
-        std::list<Point2D>::iterator min_jit;
-        std::list<Point2D>::iterator min_point;
+    // Variáveis para guardar o ponto com menor distância dentro do ciclo
+    float min_dist = INF;
+    float cost = 0;
+    std::list<Point2D>::iterator min_jit;
+    std::list<Point2D>::iterator min_point;
 
-        // Para cada ponto não adicionado dentro do ciclo...
+    // Enquanto ainda houver pontos a serem analisados...
+    while (points.size() > 0) {
+        min_dist = INF;
+        // Para cada ponto que ainda não está dentro do ciclo...
         for (std::list<Point2D>::iterator point = points.begin(); point != points.end(); ++point) {
-            // Loop para calcular o ponto com distância entre point e um ponto de cycle
+
+            // Loop para calcular a tripla de pontos que minimiza a operação dik + djk - dij
             for (auto iit = cycle.begin(); iit != cycle.end(); ++iit) {
                 auto jit = std::next(iit); // Pega o sucessor do ponto i dentro do ciclo
                 
@@ -292,14 +328,15 @@ void tsp(std::list<Point2D>& points, std::list<Point2D>& cycle) {
                     jit = cycle.begin(); // O ponto j será o começo do ciclo, para fechar o ciclo
                 }
                 
-                // Aqui o ponto j será o sucessor de i
+                // Aqui o vértice j será o sucessor de i
+                // O vértice k será o vértice a ser analisado
                 
-                // Retorna os pontos i e j apontados por seus iteradores
+                // Retorna os vértices i e j apontados por seus iteradores
                 Point2D& i = *iit,
-                        j = *jit;
+                         j = *jit;
                 
                 // Calcula distância entre i-k, j-k e i-j
-                // k é o ponto do loop externo, point
+                // k é o vértice do loop externo, point
                 float dik = dist(i, *point);
                 float djk = dist(j, *point);
                 float dij = dist(i, j);
@@ -307,15 +344,15 @@ void tsp(std::list<Point2D>& points, std::list<Point2D>& cycle) {
 
                 // Se a distância for menor do que alguma já calculada...
                 if (new_min_dist < min_dist) {
-                    // Substitui com informações para realizar a inserção dentro do ciclo
-                    min_dist = new_min_dist;
-                    min_jit = jit;
-                    min_point = point;
+                    // Substitui com as novas informações para realizar a inserção dentro do ciclo
+                    min_dist = new_min_dist; // menor distância
+                    min_jit = jit; // vértice j
+                    min_point = point; // vértice k
                 }
             }
         }
         
-        // Insere point antes do ponto J, e após o ponto I encontrado
+        // Insere point (vértice k) antes do vértice j, e após o vértice i encontrado
         if (min_jit != cycle.end()) {
             cycle.insert(min_jit, *min_point);
             points.erase(min_point);
@@ -344,9 +381,7 @@ void tsp(std::list<Point2D>& points, std::list<Point2D>& cycle) {
  *    Remove pontos da lista de pontos que já estão no ciclo, e portanto são do fecho convexo, o que têm
  *    custo da ordem de O(N * Ci), com Ci sendo o tamanho do fecho convexo calculado no quick_hull. No melhor caso, quando
  *    Ci é constante, essa operação é linear, no pior, quando Ci é da ordem de N, executa em O(N^2).
- *    Executa a função tsp. No melhor caso ele será O(N), quando o tamanho do Ci da ordem de número de pontos analisados N,
- *    e no pior caso, quando Ci é constante, é de O(N^2) assim como no caso médio.
- *    Portanto, sempre dentro dessa condição terá um custo da ordem de O(N^2).
+ *    Executa a função tsp, que é da ordem de O(N^3).
  * É inserido no fim da lista o começo dela para fechar um ciclo corretamente.
  * Calcula a distância percorrida no ciclo, em tempo linear O(N).
  * Por fim, escreve o output do ciclo, em ordem linear também O(N).
@@ -355,18 +390,10 @@ void tsp(std::list<Point2D>& points, std::list<Point2D>& cycle) {
  * Ocorre quando algoritmo quick_hull executa em tempo O(N * lgN) e retorna um ciclo hamiltoniano como fecho convexo.
  * Esse caso é raro, mas é executado em O(N * lgN).
  * 
- * Outros casos possíveis:
- * 1. Ocorre quando o algoritmo de quick_hull executa em O(N^2), não importando os outros casos. Esse caso é limitado por
- * O(N^2).
- * 2. Ocorre quando a remoção dos pontos que estão dentro do fecho convexo executa em O(N^2), limitando a execução a O(N^2).
- *    Este caso ocorre quando Ci é da ordem de N.
- * 3. Ocorre quando o cáculo do tsp executa em O(N^2), limitando também a execução em O(N^2). Este caso ocorre quando Ci é de
- *    ordem constante. É o caso mais comum de execução do algoritmo.
- * Ressaltando novamente, não é possível ocorrer o melhor caso da remoção dos pontos ao mesmo tempo que o melhor caso da função
- * tsp, pois são opostos. (Se o tamanho do fecho convexo for mais próximo do tamanho da lista de pontos analisados,
- * maior o custo da remoção de pontos, e se o tamanho do fecho convexo for o menor possível, maior do tsp)
+ * Pior caso e caso comum:
+ * Todos os outros casos que não o citado acima são limitados pela complexidade O(N^3), resultado da função tsp.
  *
- * Portanto, salvo o melhor caso raro que executa em O(N * lgN), o algoritmo executa em O(N^2).
+ * Portanto, salvo o melhor caso raro que executa em O(N * lgN), o algoritmo executa em O(N^3).
  */
 int main(int argc, char* argv[]) {
 	// Tratamento de erro caso o input seja fora dos padrões definidos
@@ -382,13 +409,14 @@ int main(int argc, char* argv[]) {
 	// Tempo do início do algoritmo
 	auto start = std::chrono::system_clock::now();
 
-    // Calcula hull
+    // Calcula o fecho convexo
 	std::list<Point2D> hull = quick_hull(points);
-    // Escreve o convex hull computado dentro de fecho.txt
+    // Escreve o fecho convexo computado dentro de fecho.txt
 	write_output("fecho.txt", hull);
 
     // Se a hull encontrada tiver o mesmo tamanho dos pontos informados, então a hull é um ciclo hamiltoniano.
     if (hull.size() < points.size()) {
+        // Converte o vetor de pontos retornado para uma lista encadeada de pontos.
         std::list<Point2D> points_list {std::begin(points), std::end(points)};
 
         // Aqui começa o tratamento dos dados para realizar o algoritmo do
